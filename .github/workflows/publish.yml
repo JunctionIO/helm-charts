@@ -33,9 +33,9 @@ jobs:
       - name: Package and push chart
         run: |
           VERSION="${{ github.ref_name }}"
-          devenv shell -- helm registry login ghcr.io/junctionio \
+          echo "${{ secrets.GITHUB_TOKEN }}" | devenv shell -- helm registry login ghcr.io \
             --username "${{ github.actor }}" \
-            --password "${{ secrets.GITHUB_TOKEN }}"
+            --password-stdin
           devenv shell -- helm package charts/junction \
             --version "${VERSION}" \
             --app-version "${VERSION}" \
