@@ -1,0 +1,16 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "junction.fullname" . }}-postgres
+  labels:
+    {{- include "junction.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 5432
+      targetPort: postgres
+      name: postgres
+  selector:
+    {{- include "junction.selectorLabels" (dict "context" . "component" "postgres") | nindent 4 }}
+{{- end }}

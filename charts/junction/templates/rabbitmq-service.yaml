@@ -1,0 +1,19 @@
+{{- if .Values.rabbitmq.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "junction.fullname" . }}-rabbitmq
+  labels:
+    {{- include "junction.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 5672
+      targetPort: amqp
+      name: amqp
+    - port: 15672
+      targetPort: management
+      name: management
+  selector:
+    {{- include "junction.selectorLabels" (dict "context" . "component" "rabbitmq") | nindent 4 }}
+{{- end }}

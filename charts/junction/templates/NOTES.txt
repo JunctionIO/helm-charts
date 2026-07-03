@@ -2,9 +2,9 @@ Junction has been deployed.
 
 API service: {{ include "junction.fullname" . }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}
 
-{{- if not .Values.postgresql.enabled }}
+{{- if not .Values.postgres.enabled }}
 
-NOTE: postgresql.enabled is false — make sure .Values.database.host points
+NOTE: postgres.enabled is false — make sure .Values.database.host points
 at your externally-managed Postgres instance.
 {{- end }}
 {{- if not .Values.rabbitmq.enabled }}

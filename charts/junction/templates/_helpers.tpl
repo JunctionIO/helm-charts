@@ -35,12 +35,12 @@ app.kubernetes.io/instance: {{ .context.Release.Name }}
 {{- end -}}
 
 {{/*
-Postgres host: the bitnami subchart's primary Service when enabled, else the
+Postgres host: the bundled Postgres Service when enabled, else the
 externally-managed host from .Values.database.host.
 */}}
 {{- define "junction.dbHost" -}}
-{{- if .Values.postgresql.enabled -}}
-{{- printf "%s-postgresql" .Release.Name -}}
+{{- if .Values.postgres.enabled -}}
+{{- printf "%s-postgres" (include "junction.fullname" .) -}}
 {{- else -}}
 {{- .Values.database.host -}}
 {{- end -}}
@@ -50,7 +50,7 @@ externally-managed host from .Values.database.host.
 Postgres port.
 */}}
 {{- define "junction.dbPort" -}}
-{{- if .Values.postgresql.enabled -}}
+{{- if .Values.postgres.enabled -}}
 5432
 {{- else -}}
 {{- .Values.database.port -}}
@@ -58,12 +58,12 @@ Postgres port.
 {{- end -}}
 
 {{/*
-RabbitMQ host: the bitnami subchart's Service when enabled, else the
+RabbitMQ host: the bundled RabbitMQ Service when enabled, else the
 externally-managed host from .Values.queue.host.
 */}}
 {{- define "junction.queueHost" -}}
 {{- if .Values.rabbitmq.enabled -}}
-{{- printf "%s-rabbitmq" .Release.Name -}}
+{{- printf "%s-rabbitmq" (include "junction.fullname" .) -}}
 {{- else -}}
 {{- .Values.queue.host -}}
 {{- end -}}
