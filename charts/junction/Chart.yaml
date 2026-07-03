@@ -1,0 +1,21 @@
+apiVersion: v2
+name: junction
+description: Junction webhook/event routing platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/JunctionIO
+sources:
+  - https://github.com/JunctionIO/api
+  - https://github.com/JunctionIO/cli
+  - https://github.com/JunctionIO/http-destination
+  - https://github.com/JunctionIO/system-worker
+dependencies:
+  - name: postgresql
+    version: ">=16.7.0 <17.0.0"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: postgresql.enabled
+  - name: rabbitmq
+    version: ">=14.7.0 <15.0.0"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: rabbitmq.enabled

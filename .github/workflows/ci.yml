@@ -1,0 +1,30 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/cachix-action@v15
+        with:
+          name: devenv
+
+      - run: nix profile install nixpkgs#devenv
+
+      - run: devenv shell -- helm dependency update charts/junction
+
+      - run: devenv shell -- helm lint charts/junction
+
+      - name: Render templates (sanity check)
+        run: |
+          devenv shell -- helm template charts/junction \
+            --set secrets.app.jwtSecret=ci-placeholder \
+            --set secrets.worker.token=ci-placeholder

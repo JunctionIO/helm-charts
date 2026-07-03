@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "junction.fullname" . }}-migrate
+  labels:
+    {{- include "junction.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        {{- include "junction.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z -w2 {{ include "junction.dbHost" . }} {{ include "junction.dbPort" . }}; do
+                echo "waiting for postgres at {{ include "junction.dbHost" . }}:{{ include "junction.dbPort" . }}..."
+                sleep 2
+              done
+      containers:
+        - name: migrate
+          image: "{{ .Values.cli.image.repository }}:{{ .Values.cli.image.tag }}"
+          imagePullPolicy: {{ .Values.cli.image.pullPolicy }}
+          args: ["migration:run", "--force"]
+          envFrom:
+            - secretRef:
+                name: {{ include "junction.appSecretName" . }}
+          env:
+            - name: APP_ENV
+              value: production
+            - name: APP_NAME
+              value: Junction
+            - name: APP_VERSION
+              value: {{ .Values.cli.image.tag | quote }}
+            - name: DB_DRIVER
+              value: pgsql
+            - name: DB_HOST
+              value: {{ include "junction.dbHost" . | quote }}
+            - name: DB_PORT
+              value: {{ include "junction.dbPort" . | quote }}
+            - name: DB_DATABASE
+              value: {{ .Values.database.name | quote }}
+          resources:
+            {{- toYaml .Values.cli.migrate.resources | nindent 12 }}

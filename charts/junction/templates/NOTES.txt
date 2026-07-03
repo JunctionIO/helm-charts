@@ -1,0 +1,23 @@
+Junction has been deployed.
+
+API service: {{ include "junction.fullname" . }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}
+
+{{- if not .Values.postgresql.enabled }}
+
+NOTE: postgresql.enabled is false — make sure .Values.database.host points
+at your externally-managed Postgres instance.
+{{- end }}
+{{- if not .Values.rabbitmq.enabled }}
+
+NOTE: rabbitmq.enabled is false — make sure .Values.queue.host points at
+your externally-managed RabbitMQ instance.
+{{- end }}
+
+To generate a worker or relay token, see the commented example in
+values.yaml under cli.keygen, or run:
+
+  helm template {{ .Release.Name }} <chart> \
+    --set cli.keygen.enabled=true \
+    --set cli.keygen.type=<relay|system|management> \
+    --set cli.keygen.id=<id> \
+    --show-only templates/cli-keygen-job.yaml | kubectl apply -n {{ .Release.Namespace }} -f -

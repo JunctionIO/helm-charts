@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "junction.fullname" . }}-http-destination-worker
+  labels:
+    {{- include "junction.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.httpDestinationWorker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "junction.selectorLabels" (dict "context" . "component" "http-destination-worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "junction.labels" . | nindent 8 }}
+        {{- include "junction.selectorLabels" (dict "context" . "component" "http-destination-worker") | nindent 8 }}
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.httpDestinationWorker.image.repository }}:{{ .Values.httpDestinationWorker.image.tag }}"
+          imagePullPolicy: {{ .Values.httpDestinationWorker.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "junction.workerSecretName" . }}
+          env:
+            - name: JUNCTION_API_URL
+              value: "http://{{ include "junction.fullname" . }}-api.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.api.service.port }}"
+          resources:
+            {{- toYaml .Values.httpDestinationWorker.resources | nindent 12 }}

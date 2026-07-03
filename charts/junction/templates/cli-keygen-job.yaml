@@ -1,0 +1,31 @@
+{{- if .Values.cli.keygen.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Includes a random suffix so re-running (e.g. to generate another token)
+  # doesn't collide with a previous keygen Job's immutable name.
+  name: {{ include "junction.fullname" . }}-keygen-{{ randAlphaNum 5 | lower }}
+  labels:
+    {{- include "junction.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        {{- include "junction.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: keygen
+          image: "{{ .Values.cli.image.repository }}:{{ .Values.cli.image.tag }}"
+          imagePullPolicy: {{ .Values.cli.image.pullPolicy }}
+          args:
+            - token:create
+            - {{ required "cli.keygen.id is required" .Values.cli.keygen.id }}
+            - --type={{ .Values.cli.keygen.type }}
+          envFrom:
+            - secretRef:
+                name: {{ include "junction.appSecretName" . }}
+          resources:
+            {{- toYaml .Values.cli.keygen.resources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,43 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - '[0-9]*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/cachix-action@v15
+        with:
+          name: devenv
+
+      - run: nix profile install nixpkgs#devenv
+
+      - run: devenv shell -- helm dependency update charts/junction
+
+      - run: devenv shell -- helm lint charts/junction
+
+      - name: Package and push chart
+        run: |
+          VERSION="${{ github.ref_name }}"
+          devenv shell -- helm registry login ghcr.io/junctionio \
+            --username "${{ github.actor }}" \
+            --password "${{ secrets.GITHUB_TOKEN }}"
+          devenv shell -- helm package charts/junction \
+            --version "${VERSION}" \
+            --app-version "${VERSION}" \
+            --destination /tmp
+          devenv shell -- helm push "/tmp/junction-${VERSION}.tgz" oci://ghcr.io/junctionio/charts

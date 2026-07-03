@@ -1,0 +1,19 @@
+# Helm
+charts/junction/charts/
+charts/junction/Chart.lock
+*.tgz
+
+# devenv
+.devenv/
+.devenv.flake.nix
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

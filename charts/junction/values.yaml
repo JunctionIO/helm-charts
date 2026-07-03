@@ -1,0 +1,169 @@
+# Resource requests/limits throughout this file are best-guess placeholders
+# for the POC — not yet benchmarked under load.
+
+api:
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/junctionio/api
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+
+  env:
+    appEnv: production
+    appDebug: false
+    logLevel: info
+
+  fpm:
+    port: 9000
+
+  nginx:
+    image:
+      repository: nginx
+      tag: "1.27-alpine"
+      pullPolicy: IfNotPresent
+    port: 8080
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+httpDestinationWorker:
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/junctionio/http-destination
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+systemWorker:
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/junctionio/system-worker
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+cli:
+  image:
+    repository: ghcr.io/junctionio/cli
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+
+  # Runs `migration:run --force` as a pre-install/pre-upgrade Helm hook Job.
+  migrate:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+  # Adhoc `token:create` Job — disabled by default, not part of the normal
+  # install/upgrade lifecycle. Render and apply manually when an operator
+  # needs a new token, e.g.:
+  #   helm template junction ./charts/junction \
+  #     --set cli.keygen.enabled=true \
+  #     --set cli.keygen.type=system \
+  #     --set cli.keygen.id=http_destination \
+  #     --show-only templates/cli-keygen-job.yaml | kubectl apply -f -
+  keygen:
+    enabled: false
+    type: relay
+    id: ""
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+# Non-secret database connection info. host/port are ignored (and derived
+# from the postgresql subchart's Service instead) when postgresql.enabled
+# is true.
+database:
+  host: ""
+  port: 5432
+  name: junction
+
+# Non-secret broker connection info. host/port are ignored (and derived
+# from the rabbitmq subchart's Service instead) when rabbitmq.enabled
+# is true.
+queue:
+  host: ""
+  port: 5672
+
+# Credential material, templated into two Secrets:
+#   - the "app" secret, shared by the API and CLI
+#   - the "worker" secret, shared by the HTTP destination and system workers
+#
+# jwtSecret and worker.token have no default and MUST be set explicitly —
+# `helm install`/`upgrade` fails otherwise (see templates/secret-app.yaml
+# and templates/secret-worker.yaml). Leaving either blank would silently
+# deploy with a broken/empty auth signing key.
+#
+# dbUsername/dbPassword and queueUsername/queuePassword are shared with the
+# Bitnami postgresql/rabbitmq subcharts below via YAML anchors, so the API
+# and CLI always agree with the database/broker on the same credentials.
+# The defaults below (junction/junction, guest/guest) match the component
+# .env.example files and are fine for the POC, but should be overridden for
+# anything longer-lived.
+secrets:
+  app:
+    jwtSecret: ""
+    dbUsername: &dbUsername junction
+    dbPassword: &dbPassword junction
+    queueUsername: &queueUsername guest
+    queuePassword: &queuePassword guest
+  worker:
+    token: ""
+
+# Bitnami subchart. Set enabled: false and populate `database` above to
+# point at an externally-managed Postgres instance instead (post-POC).
+postgresql:
+  enabled: true
+  auth:
+    username: *dbUsername
+    password: *dbPassword
+    database: junction
+
+# Bitnami subchart. Set enabled: false and populate `queue` above to
+# point at an externally-managed RabbitMQ instance instead (post-POC).
+rabbitmq:
+  enabled: true
+  auth:
+    username: *queueUsername
+    password: *queuePassword
