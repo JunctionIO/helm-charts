@@ -1,12 +1,12 @@
-# Resource requests/limits throughout this file are best-guess placeholders
-# for the POC — not yet benchmarked under load.
+# Resource requests/limits throughout this file are placeholders, not yet
+# benchmarked.
 
 api:
   replicaCount: 1
 
   image:
     repository: ghcr.io/junctionio/api
-    tag: "0.1.0"
+    tag: "0.1.1"
     pullPolicy: IfNotPresent
 
   env:
@@ -81,7 +81,7 @@ cli:
     tag: "0.1.0"
     pullPolicy: IfNotPresent
 
-  # Runs `migration:run --force` as a pre-install/pre-upgrade Helm hook Job.
+  # Runs `migration:run --force` as a post-install/pre-upgrade Helm hook Job.
   migrate:
     resources:
       requests:
@@ -91,9 +91,7 @@ cli:
         cpu: 500m
         memory: 256Mi
 
-  # Adhoc `token:create` Job — disabled by default, not part of the normal
-  # install/upgrade lifecycle. Render and apply manually when an operator
-  # needs a new token, e.g.:
+  # Adhoc `token:create` Job, disabled by default. Render and apply manually:
   #   helm template junction ./charts/junction \
   #     --set cli.keygen.enabled=true \
   #     --set cli.keygen.type=system \
@@ -111,34 +109,24 @@ cli:
         cpu: 500m
         memory: 256Mi
 
-# Non-secret database connection info. host/port are ignored (and derived
-# from the bundled Postgres Service instead) when postgres.enabled is true.
+# Ignored (host/port derived from the bundled Postgres Service) when
+# postgres.enabled is true.
 database:
   host: ""
   port: 5432
   name: junction
 
-# Non-secret broker connection info. host/port are ignored (and derived
-# from the bundled RabbitMQ Service instead) when rabbitmq.enabled is true.
+# Ignored (host/port derived from the bundled RabbitMQ Service) when
+# rabbitmq.enabled is true.
 queue:
   host: ""
   port: 5672
 
-# Credential material, templated into two Secrets:
-#   - the "app" secret, shared by the API and CLI
-#   - the "worker" secret, shared by the HTTP destination and system workers
-#
-# jwtSecret and worker.token have no default and MUST be set explicitly —
-# `helm install`/`upgrade` fails otherwise (see templates/secret-app.yaml
-# and templates/secret-worker.yaml). Leaving either blank would silently
-# deploy with a broken/empty auth signing key.
-#
+# Templated into two Secrets: "app" (API + CLI) and "worker" (both workers).
+# jwtSecret and worker.token have no default - must be set explicitly, see
+# templates/secret-app.yaml and templates/secret-worker.yaml.
 # dbUsername/dbPassword and queueUsername/queuePassword are shared with the
-# bundled postgres/rabbitmq templates below via YAML anchors, so the API
-# and CLI always agree with the database/broker on the same credentials.
-# The defaults below (junction/junction, guest/guest) match the component
-# .env.example files and are fine for the POC, but should be overridden for
-# anything longer-lived.
+# postgres/rabbitmq sections below via YAML anchors.
 secrets:
   app:
     jwtSecret: ""
@@ -149,12 +137,8 @@ secrets:
   worker:
     token: ""
 
-# Bundled single-node Postgres, using the official postgres image (not a
-# Bitnami subchart - dropped 2026-07-03 after finding Bitnami's RabbitMQ
-# image has zero public tags left and Postgres only has "latest", both
-# consequences of Broadcom restricting older Bitnami tags to a paid tier).
-# Set enabled: false and populate `database` above to point at an
-# externally-managed Postgres instance instead (post-POC).
+# Bundled single-node Postgres (official postgres image). Set enabled: false
+# and populate `database` above to point at an externally-managed instance.
 postgres:
   enabled: true
   image:
@@ -175,10 +159,8 @@ postgres:
       cpu: 500m
       memory: 512Mi
 
-# Bundled single-node RabbitMQ, using the official rabbitmq image (not a
-# Bitnami subchart - see postgres.enabled comment above for why). Set
-# enabled: false and populate `queue` above to point at an
-# externally-managed RabbitMQ instance instead (post-POC).
+# Bundled single-node RabbitMQ (official rabbitmq image). Set enabled: false
+# and populate `queue` above to point at an externally-managed instance.
 rabbitmq:
   enabled: true
   image:
