@@ -12,7 +12,9 @@ data:
         location / {
             fastcgi_pass 127.0.0.1:{{ .Values.api.fpm.port }};
             fastcgi_index index.php;
-            fastcgi_param SCRIPT_FILENAME /app/www/index.php;
+            # devenv's copyToRoot places app content under /env, not
+            # container root - see api/devenv.nix's entrypoint fix.
+            fastcgi_param SCRIPT_FILENAME /env/app/www/index.php;
             include fastcgi_params;
         }
     }
