@@ -9,7 +9,7 @@ Helm chart for the Junction webhook/event routing platform.
 | API (nginx + PHP-FPM) | Deployment + Service |
 | HTTP destination worker | Deployment |
 | System/internal worker | Deployment |
-| CLI migration | Job (pre-install/pre-upgrade hook) |
+| CLI migration | Job (post-install/pre-upgrade hook) |
 | CLI token generation | Job (manual, disabled by default) |
 | Postgres | StatefulSet + Service (official `postgres` image) |
 | RabbitMQ | StatefulSet + Service (official `rabbitmq` image) |

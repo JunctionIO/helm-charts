@@ -4,7 +4,7 @@ Helm charts for deploying [Junction](https://github.com/JunctionIO), a webhook/e
 
 ## Charts
 
-- [`junction`](charts/junction) — the full self-hosted deployment: API, CLI (migration/keygen Jobs), HTTP destination worker, system worker, and Postgres/RabbitMQ (via Bitnami subcharts).
+- [`junction`](charts/junction) — the full self-hosted deployment: API, CLI (migration/keygen Jobs), HTTP destination worker, system worker, and Postgres/RabbitMQ (hand-written StatefulSets using official images).
 
 ## Dev Environment
 
@@ -12,7 +12,6 @@ Requires [Nix](https://nixos.org/download/) and [devenv](https://devenv.sh/getti
 
 ```bash
 devenv shell
-helm dependency update charts/junction
 helm lint charts/junction
 helm template charts/junction --set secrets.app.jwtSecret=x --set secrets.worker.token=x
 ```
