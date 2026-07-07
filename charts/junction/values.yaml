@@ -48,7 +48,7 @@ httpDestinationWorker:
 
   image:
     repository: ghcr.io/junctionio/http-destination
-    tag: "0.1.0"
+    tag: "0.2.0"
     pullPolicy: IfNotPresent
 
   resources:
